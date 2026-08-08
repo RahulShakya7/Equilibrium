@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 771692dd2df2041f4921c32acdb64fe4
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - dialogueRunner: {instanceID: 0}
+  - lineText: {instanceID: 0}
+  - choiceContainer: {instanceID: 0}
+  - choiceButtonPrefab: {fileID: 5848646367094624089, guid: e81e28d35fbc84cf7b37e72c475ddf74, type: 3}
+  - speakerNameText: {instanceID: 0}
+  - speakerPortrait: {instanceID: 0}
+  - continueIndicator: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
