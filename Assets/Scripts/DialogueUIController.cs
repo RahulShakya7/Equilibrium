@@ -19,19 +19,13 @@ public class DialogueUIController : MonoBehaviour
 
     [Header("Typewriter Settings")]
     [SerializeField] private float charactersPerSecond = 30f;
-    [SerializeField] private GameObject continueIndicator;   // ▼ or "Click to continue"
+    [SerializeField] private GameObject continueIndicator;
 
     private Coroutine typewriterCoroutine;
     private string currentFullLine;
     private bool waitingForClick = false;
-    
-    private List<Choice> pendingChoices;    // choices that appear after the line finishes
+    private List<Choice> pendingChoices;
 
-    void ClearChoices()
-    {
-        foreach (Transform child in choiceContainer)
-            Destroy(child.gameObject);
-    }
     private void OnEnable()
     {
         if (dialogueRunner != null)
@@ -65,13 +59,8 @@ public class DialogueUIController : MonoBehaviour
         }
     }
 
-    // ----------------------------------------------------------------
-    //  Line received from InkRunner
-    // ----------------------------------------------------------------
     void HandleLine(string line, List<string> tags)
     {
-        ClearChoices();        
-        Debug.Log("[UI] HandleLine: " + line);   // DEBUG
         HandleTags(tags);
         currentFullLine = line;
 
@@ -95,8 +84,6 @@ public class DialogueUIController : MonoBehaviour
 
     void OnTypewriterComplete()
     {
-        Debug.Log("[UI] Typewriter complete. pendingChoices=" + (pendingChoices != null));
-
         if (pendingChoices != null)
         {
             ShowChoicesNow(pendingChoices);
@@ -121,15 +108,10 @@ public class DialogueUIController : MonoBehaviour
         }
     }
 
-    // ----------------------------------------------------------------
-    //  Choices received from InkRunner
-    // ----------------------------------------------------------------
     void ReceiveChoices(List<Choice> choices)
     {
-        Debug.Log("[UI] ReceiveChoices called with " + choices.Count + " choices."); // DEBUG
         if (typewriterCoroutine != null)
         {
-            // Still typing; store choices to show later
             pendingChoices = choices;
         }
         else
@@ -139,48 +121,38 @@ public class DialogueUIController : MonoBehaviour
     }
 
     void ShowChoicesNow(List<Choice> choices)
-{
-    // Immediately hide the click-to-continue indicator
-    waitingForClick = false;
-    if (continueIndicator != null)
-        continueIndicator.SetActive(false);
-
-    // Destroy old buttons
-    foreach (Transform child in choiceContainer)
-        Destroy(child.gameObject);
-
-    // Create new buttons
-    for (int i = 0; i < choices.Count; i++)
     {
-        Choice choice = choices[i];
-        GameObject buttonObj = Instantiate(choiceButtonPrefab, choiceContainer);
+        waitingForClick = false;
+        if (continueIndicator != null)
+            continueIndicator.SetActive(false);
 
-        TMP_Text buttonText = buttonObj.GetComponentInChildren<TMP_Text>();
-        if (buttonText != null)
-            buttonText.text = choice.text.Trim();
+        foreach (Transform child in choiceContainer)
+            Destroy(child.gameObject);
 
-        int index = i;
-        Button button = buttonObj.GetComponent<Button>();
-        if (button != null)
-            button.onClick.AddListener(() => dialogueRunner.MakeChoice(index));
+        for (int i = 0; i < choices.Count; i++)
+        {
+            Choice choice = choices[i];
+            GameObject buttonObj = Instantiate(choiceButtonPrefab, choiceContainer);
+
+            TMP_Text buttonText = buttonObj.GetComponentInChildren<TMP_Text>();
+            if (buttonText != null)
+                buttonText.text = choice.text.Trim();
+
+            int index = i;
+            Button button = buttonObj.GetComponent<Button>();
+            if (button != null)
+                button.onClick.AddListener(() => dialogueRunner.MakeChoice(index));
+        }
     }
-}
 
-    // ----------------------------------------------------------------
-    //  Advance to next line (when no choices)
-    // ----------------------------------------------------------------
     void Advance()
     {
-        Debug.Log("[UI] Advance clicked"); // DEBUG
         waitingForClick = false;
         if (continueIndicator != null)
             continueIndicator.SetActive(false);
         dialogueRunner.ContinueStory();
     }
 
-    // ----------------------------------------------------------------
-    //  Tag handling
-    // ----------------------------------------------------------------
     void HandleTags(List<string> tags)
     {
         foreach (string tag in tags)
@@ -191,8 +163,12 @@ public class DialogueUIController : MonoBehaviour
                 if (speakerNameText != null)
                     speakerNameText.text = speaker;
             }
+
+            // Forward the tag to the EnvironmentManager
+            if (EnvironmentManager.Instance != null)
+            {
+                EnvironmentManager.Instance.HandleTag(tag);
+            }
         }
     }
-
-    
 }

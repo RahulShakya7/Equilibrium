@@ -8,8 +8,10 @@ public class InkDialogueRunner : MonoBehaviour
     [Header("Ink Story")]
     [SerializeField] private TextAsset inkJSON;
 
+    // Events for UI and game systems
     public event Action<string, List<string>> OnLineReady;
     public event Action<List<Choice>> OnChoicesReady;
+    public event Action<string, object> OnVariableChanged;
 
     private Story story;
     private bool storyEnded = false;
@@ -21,15 +23,27 @@ public class InkDialogueRunner : MonoBehaviour
             Debug.LogError("InkDialogueRunner: Ink JSON is not assigned.");
             return;
         }
+
         story = new Story(inkJSON.text);
+
+        // Register observers for the resource variables
+        story.ObserveVariable("forest_stock", (varName, newValue) => {
+            OnVariableChanged?.Invoke(varName, newValue);
+        });
+        story.ObserveVariable("river_clarity", (varName, newValue) => {
+            OnVariableChanged?.Invoke(varName, newValue);
+        });
+        story.ObserveVariable("soil_fertility", (varName, newValue) => {
+            OnVariableChanged?.Invoke(varName, newValue);
+        });
+
         TryAdvance();
     }
 
     public void ContinueStory()
     {
         if (storyEnded) return;
-        // If there are choices showing, ignore click – player must choose
-        if (story.currentChoices.Count > 0) return;
+        if (story.currentChoices.Count > 0) return; // wait for choice
         TryAdvance();
     }
 
@@ -42,6 +56,14 @@ public class InkDialogueRunner : MonoBehaviour
         }
     }
 
+    public void GoToKnot(string knotName)
+    {
+        if (story == null) return;
+        story.ChoosePathString(knotName);
+        storyEnded = false;
+        TryAdvance();
+    }
+
     private void TryAdvance()
     {
         string line = "";
@@ -51,44 +73,26 @@ public class InkDialogueRunner : MonoBehaviour
         {
             line = story.Continue();
             tags = story.currentTags;
-            Debug.Log("[INK] Line: " + line);                          // DEBUG
         }
-        else
-        {
-            Debug.Log("[INK] No more content can continue.");          // DEBUG
-        }
+
+        // After Continue, variables may have changed; observers fire automatically.
 
         List<Choice> choices = null;
         if (story.currentChoices.Count > 0)
         {
             choices = story.currentChoices;
-            Debug.Log("[INK] Choices found: " + choices.Count);        // DEBUG
-            foreach (var c in choices)
-                Debug.Log("   -> " + c.text);                          // DEBUG
-        }
-        else
-        {
-            Debug.Log("[INK] No choices right now.");                  // DEBUG
         }
 
         if (!story.canContinue && choices == null)
         {
             storyEnded = true;
-            Debug.Log("[INK] Story ended.");                            // DEBUG
         }
 
         OnLineReady?.Invoke(line.Trim(), tags);
+
         if (choices != null)
         {
-            Debug.Log("[INK] Firing OnChoicesReady.");                 // DEBUG
             OnChoicesReady?.Invoke(choices);
         }
-    }
-
-    public void GoToKnot(string knotName)
-    {
-        story.ChoosePathString(knotName);
-        storyEnded = false;
-        TryAdvance();
     }
 }
