@@ -7,7 +7,10 @@ using System.Collections.Generic;
 
 public class DialogueUIController : MonoBehaviour
 {
-    [Header("Core References")]
+    [Header("Auto Advance")]
+    [SerializeField] private float autoAdvanceDelay = 2.5f; 
+    private Coroutine autoAdvanceCoroutine;
+      // seconds to wait before auto-advancing
     [SerializeField] private InkDialogueRunner dialogueRunner;
     [SerializeField] private TMP_Text lineText;
     [SerializeField] private Transform choiceContainer;
@@ -25,6 +28,7 @@ public class DialogueUIController : MonoBehaviour
     private string currentFullLine;
     private bool waitingForClick = false;
     private List<Choice> pendingChoices;
+    private bool autoAdvanceLine = false;
 
     private void OnEnable()
     {
@@ -61,8 +65,15 @@ public class DialogueUIController : MonoBehaviour
 
     void HandleLine(string line, List<string> tags)
     {
+        autoAdvanceLine = false;   // reset for the new line
         HandleTags(tags);
         currentFullLine = line;
+
+        if (autoAdvanceCoroutine != null)
+        {
+            StopCoroutine(autoAdvanceCoroutine);
+            autoAdvanceCoroutine = null;
+        }
 
         if (typewriterCoroutine != null)
             StopCoroutine(typewriterCoroutine);
@@ -84,19 +95,32 @@ public class DialogueUIController : MonoBehaviour
 
     void OnTypewriterComplete()
     {
+        autoAdvanceCoroutine = StartCoroutine(AutoAdvance());
         if (pendingChoices != null)
         {
             ShowChoicesNow(pendingChoices);
             pendingChoices = null;
         }
+        else if (autoAdvanceLine)
+        {
+            // No choices and this line should auto-advance
+            StartCoroutine(AutoAdvance());
+        }
         else
         {
+            // Normal click-to-continue
             waitingForClick = true;
             if (continueIndicator != null)
                 continueIndicator.SetActive(true);
         }
     }
 
+    IEnumerator AutoAdvance()
+    {
+        yield return new WaitForSeconds(autoAdvanceDelay);
+        autoAdvanceCoroutine = null;
+        Advance();
+    }
     public void SkipTypewriter()
     {
         if (typewriterCoroutine != null)
@@ -147,6 +171,11 @@ public class DialogueUIController : MonoBehaviour
 
     void Advance()
     {
+        if (autoAdvanceCoroutine != null)
+        {
+            StopCoroutine(autoAdvanceCoroutine);
+            autoAdvanceCoroutine = null;
+        }
         waitingForClick = false;
         if (continueIndicator != null)
             continueIndicator.SetActive(false);
@@ -154,7 +183,11 @@ public class DialogueUIController : MonoBehaviour
     }
 
     void HandleTags(List<string> tags)
-    {
+    {   
+        if (tags.Contains("auto"))
+        {
+            autoAdvanceLine = true;
+        }
         foreach (string tag in tags)
         {
             if (tag.StartsWith("speaker "))

@@ -19,21 +19,33 @@ public class ClickToMove : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetMouseButtonDown(0) && !EventSystem.current.IsPointerOverGameObject())
+        if (Input.GetMouseButtonDown(0))
         {
+            Debug.Log("Mouse clicked. Over UI? " + EventSystem.current.IsPointerOverGameObject());
+
+            if (EventSystem.current.IsPointerOverGameObject())
+                return;   // clicked on UI, ignore
+
             Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
+            Debug.Log("Ray origin: " + ray.origin + " direction: " + ray.direction);
+
             if (Physics.Raycast(ray, out RaycastHit hit))
             {
+                Debug.Log("Hit object: " + hit.collider.name + " tag: " + hit.collider.tag + " point: " + hit.point);
+
                 if (hit.collider.CompareTag("Ground"))
                 {
+                    Debug.Log("Ground clicked, setting destination.");
                     agent.SetDestination(hit.point);
-
-                    if (clickEffectPrefab != null)
-                    {
-                        GameObject effect = Instantiate(clickEffectPrefab, hit.point + Vector3.up * 0.1f, Quaternion.identity);
-                        Destroy(effect, 1.5f);
-                    }
                 }
+                else
+                {
+                    Debug.LogWarning("Clicked object is not tagged Ground. Check the tag!");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("Raycast hit nothing. Is there a collider on the ground?");
             }
         }
     }
