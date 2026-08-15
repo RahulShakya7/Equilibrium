@@ -1,2 +1,13 @@
 fileFormatVersion: 2
 guid: f4a63a2d51fea482e810aec1f3ffc298
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - tutorialMarkerPrefab: {fileID: 5185558763802277195, guid: d5ce60df0c85747e988b2e3b4875337e, type: 3}
+  - spawnPosition: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

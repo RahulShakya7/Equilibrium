@@ -47,6 +47,13 @@ public class InkDialogueRunner : MonoBehaviour
         TryAdvance();
     }
 
+    public int GetVariableValue(string varName)
+    {
+        if (story == null) return 0;
+        object value = story.variablesState[varName];
+        if (value == null) return 0;
+        return (int)value;
+    }
     public void MakeChoice(int choiceIndex)
     {
         if (story.currentChoices.Count > choiceIndex)
