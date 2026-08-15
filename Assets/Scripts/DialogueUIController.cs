@@ -7,14 +7,15 @@ using System.Collections.Generic;
 
 public class DialogueUIController : MonoBehaviour
 {
-    [Header("Auto Advance")]
+    [Header("Auto Advance Settings")]
     [SerializeField] private float autoAdvanceDelay = 2.5f; 
     private Coroutine autoAdvanceCoroutine;
-      // seconds to wait before auto-advancing
+
+    [Header("Dependencies")]
     [SerializeField] private InkDialogueRunner dialogueRunner;
     [SerializeField] private TMP_Text lineText;
-    [SerializeField] private Transform choiceContainer;
-    [SerializeField] private GameObject choiceButtonPrefab;
+    [SerializeField] private Transform choiceContainer;     // Assign ChoiceObject
+    [SerializeField] private GameObject choiceButtonPrefab; // Assign ChoiceButton prefab
 
     [Header("Speaker UI (Optional)")]
     [SerializeField] private TMP_Text speakerNameText;
@@ -24,11 +25,16 @@ public class DialogueUIController : MonoBehaviour
     [SerializeField] private float charactersPerSecond = 30f;
     [SerializeField] private GameObject continueIndicator;
 
+    // State
     private Coroutine typewriterCoroutine;
     private string currentFullLine;
-    private bool waitingForClick = false;
     private List<Choice> pendingChoices;
-    private bool autoAdvanceLine = false;
+
+    private List<string> lineHistory = new List<string>();
+    private int historyIndex = -1;
+
+    private bool isPlayerInDecisionZone = false;
+    private bool isShowingChoices = false; 
 
     private void OnEnable()
     {
@@ -50,41 +56,36 @@ public class DialogueUIController : MonoBehaviour
 
     void Update()
     {
-        // Skip typewriter with click or space
-        if (typewriterCoroutine != null && (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Space)))
+        if (isShowingChoices) return;
+
+        if (Input.GetKeyDown(KeyCode.LeftArrow))
         {
-            SkipTypewriter();
+            GoToPreviousLine();
         }
 
-        // Advance to next line when waiting for click and no choices are pending
-        if (waitingForClick && pendingChoices == null && (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Space)))
+        if (Input.GetKeyDown(KeyCode.RightArrow))
         {
-            Advance();
+            SkipOrAdvance();
         }
     }
 
     void HandleLine(string line, List<string> tags)
     {
-        autoAdvanceLine = false;   // reset for the new line
         HandleTags(tags);
         currentFullLine = line;
 
-        if (autoAdvanceCoroutine != null)
-        {
-            StopCoroutine(autoAdvanceCoroutine);
-            autoAdvanceCoroutine = null;
-        }
+        lineHistory.Add(line);
+        historyIndex = lineHistory.Count - 1;
 
-        if (typewriterCoroutine != null)
-            StopCoroutine(typewriterCoroutine);
+        StopActiveCoroutines();
 
-        typewriterCoroutine = StartCoroutine(TypeLine());
+        typewriterCoroutine = StartCoroutine(TypeLine(currentFullLine));
     }
 
-    IEnumerator TypeLine()
+    IEnumerator TypeLine(string textToType)
     {
         lineText.text = "";
-        foreach (char c in currentFullLine)
+        foreach (char c in textToType)
         {
             lineText.text += c;
             yield return new WaitForSeconds(1f / charactersPerSecond);
@@ -95,24 +96,33 @@ public class DialogueUIController : MonoBehaviour
 
     void OnTypewriterComplete()
     {
-        autoAdvanceCoroutine = StartCoroutine(AutoAdvance());
+        if (isShowingChoices) return;
+
+        // If choices are waiting and player is in trigger zone, show buttons
         if (pendingChoices != null)
         {
-            ShowChoicesNow(pendingChoices);
-            pendingChoices = null;
+            if (continueIndicator != null)
+                continueIndicator.SetActive(false);
+
+            if (isPlayerInDecisionZone)
+            {
+                ShowChoicesNow(pendingChoices);
+                pendingChoices = null;
+            }
+            return;
         }
-        else if (autoAdvanceLine)
+
+        if (historyIndex < lineHistory.Count - 1)
         {
-            // No choices and this line should auto-advance
-            StartCoroutine(AutoAdvance());
-        }
-        else
-        {
-            // Normal click-to-continue
-            waitingForClick = true;
             if (continueIndicator != null)
                 continueIndicator.SetActive(true);
+            return;
         }
+
+        if (continueIndicator != null)
+            continueIndicator.SetActive(true);
+
+        autoAdvanceCoroutine = StartCoroutine(AutoAdvance());
     }
 
     IEnumerator AutoAdvance()
@@ -121,41 +131,134 @@ public class DialogueUIController : MonoBehaviour
         autoAdvanceCoroutine = null;
         Advance();
     }
-    public void SkipTypewriter()
+
+    public void SkipOrAdvance()
     {
+        if (isShowingChoices) return;
+
         if (typewriterCoroutine != null)
         {
             StopCoroutine(typewriterCoroutine);
-            lineText.text = currentFullLine;
+            lineText.text = lineHistory[historyIndex];
             typewriterCoroutine = null;
             OnTypewriterComplete();
+            return;
+        }
+
+        if (historyIndex < lineHistory.Count - 1)
+        {
+            historyIndex++;
+            DisplayHistoryLine();
+            return;
+        }
+
+        Advance();
+    }
+
+    public void GoToPreviousLine()
+    {
+        if (isShowingChoices || lineHistory.Count == 0) return;
+
+        if (historyIndex > 0)
+        {
+            historyIndex--;
+            DisplayHistoryLine();
+        }
+    }
+
+    private void DisplayHistoryLine()
+    {
+        StopActiveCoroutines();
+        lineText.text = lineHistory[historyIndex];
+        if (continueIndicator != null)
+            continueIndicator.SetActive(true);
+    }
+
+    private void StopActiveCoroutines()
+    {
+        if (continueIndicator != null)
+            continueIndicator.SetActive(false);
+
+        if (autoAdvanceCoroutine != null)
+        {
+            StopCoroutine(autoAdvanceCoroutine);
+            autoAdvanceCoroutine = null;
+        }
+        if (typewriterCoroutine != null)
+        {
+            StopCoroutine(typewriterCoroutine);
+            typewriterCoroutine = null;
         }
     }
 
     void ReceiveChoices(List<Choice> choices)
     {
-        if (typewriterCoroutine != null)
+        pendingChoices = choices;
+
+        // If the typewriter is currently typing out a line, do NOT interrupt it.
+        // Let it finish. OnTypewriterComplete() will automatically show these choices when done.
+        if (typewriterCoroutine != null) 
         {
-            pendingChoices = choices;
+            return;
         }
-        else
+
+        // Only stop coroutines and show choices instantly if no line is currently being typed
+        StopActiveCoroutines();
+
+        if (isPlayerInDecisionZone)
         {
-            ShowChoicesNow(choices);
+            ShowChoicesNow(pendingChoices);
+            pendingChoices = null;
+        }
+    }
+
+    public void SetPlayerInDecisionZone(bool inZone, string optionalKnotName = "")
+    {
+        isPlayerInDecisionZone = inZone;
+
+        if (!inZone) return;
+
+        StopActiveCoroutines();
+
+        // If knot name passed (e.g. "decision_point_1"), start that knot now!
+        if (!string.IsNullOrEmpty(optionalKnotName) && dialogueRunner != null)
+        {
+            Debug.Log("Starting Knot via Trigger: " + optionalKnotName);
+            dialogueRunner.GoToKnot(optionalKnotName);
+            return;
+        }
+
+        if (pendingChoices != null)
+        {
+            ShowChoicesNow(pendingChoices);
+            pendingChoices = null;
         }
     }
 
     void ShowChoicesNow(List<Choice> choices)
     {
-        waitingForClick = false;
+        StopActiveCoroutines();
+
+        isShowingChoices = true;
         if (continueIndicator != null)
             continueIndicator.SetActive(false);
 
+        if (choiceContainer == null || choiceButtonPrefab == null)
+        {
+            Debug.LogError("DialogueUIController: Choice Container or Choice Button Prefab is missing in Inspector!");
+            return;
+        }
+
+        // Clear previous buttons
         foreach (Transform child in choiceContainer)
             Destroy(child.gameObject);
 
+        // Instantiate new buttons
         for (int i = 0; i < choices.Count; i++)
         {
             Choice choice = choices[i];
+            Debug.Log("Spawning Button for Choice: " + choice.text);
+
             GameObject buttonObj = Instantiate(choiceButtonPrefab, choiceContainer);
 
             TMP_Text buttonText = buttonObj.GetComponentInChildren<TMP_Text>();
@@ -165,29 +268,32 @@ public class DialogueUIController : MonoBehaviour
             int index = i;
             Button button = buttonObj.GetComponent<Button>();
             if (button != null)
-                button.onClick.AddListener(() => dialogueRunner.MakeChoice(index));
+            {
+                button.onClick.AddListener(() => SelectChoice(index));
+            }
         }
+    }
+
+    private void SelectChoice(int choiceIndex)
+    {
+        isShowingChoices = false;
+        isPlayerInDecisionZone = false;
+
+        foreach (Transform child in choiceContainer)
+            Destroy(child.gameObject);
+
+        if (dialogueRunner != null)
+            dialogueRunner.MakeChoice(choiceIndex);
     }
 
     void Advance()
     {
-        if (autoAdvanceCoroutine != null)
-        {
-            StopCoroutine(autoAdvanceCoroutine);
-            autoAdvanceCoroutine = null;
-        }
-        waitingForClick = false;
-        if (continueIndicator != null)
-            continueIndicator.SetActive(false);
+        StopActiveCoroutines();
         dialogueRunner.ContinueStory();
     }
 
     void HandleTags(List<string> tags)
     {   
-        if (tags.Contains("auto"))
-        {
-            autoAdvanceLine = true;
-        }
         foreach (string tag in tags)
         {
             if (tag.StartsWith("speaker "))
@@ -197,7 +303,6 @@ public class DialogueUIController : MonoBehaviour
                     speakerNameText.text = speaker;
             }
 
-            // Forward the tag to the EnvironmentManager
             if (EnvironmentManager.Instance != null)
             {
                 EnvironmentManager.Instance.HandleTag(tag);
