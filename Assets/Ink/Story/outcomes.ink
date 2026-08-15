@@ -19,22 +19,26 @@
 # Mother Nature: Balanced
 The valley settles into something like breathing - in, out, steady.
 Nothing here is finished. Nothing here is broken either.
+The End
 -> END
 
 === state_2_vulnerable ===
 # Mother Nature Vulnerable
 The forest still stands, green and untouched.
 But downstream, the water remembers what the wall did to it.
+The End
 -> END
 
 === state_3_partial ===
 # Mother Nature Partial
 The stumps have grass between them now, after a fashion.
 It costs more than it once did, to keep this valley alive.
+The End
 -> END
 
 === state_4_collapse ===
 # Mother Nature Collapse
 The valley does not recover in any season Rahul will live to see.
 The scales did not tip back.
+The End
 -> END
