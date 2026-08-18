@@ -6,6 +6,8 @@ TagManager:
   tags:
   - Ground
   - River
+  - Boarder
+  - Decision
   layers:
   - Default
   - TransparentFX
