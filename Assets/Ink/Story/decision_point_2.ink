@@ -1,6 +1,5 @@
 // decision_point_2.ink
 // Acts on river_clarity. Option A = balancing loop, Option B = reinforcing loop.
-// This is a mandatory active choice regardless of Decision Point 1's outcome.
 
 === decision_point_2 ===
 The settlement must act to secure the water supply against the swelling current.
@@ -12,25 +11,15 @@ The settlement must act to secure the water supply against the swelling current.
 
 === restoration ===
 ~ river_clarity += 5
-// Initiates a balancing loop. Increases natural capital recovery.
-# Mother Nature 
-# water_recovering
-# loop_balancing
-
-Dedicating our labor to the land slows the settlement's immediate growth, but the natural barriers begin to take root. 
-
-Human hands go back into the mud, not to fight it, but to hold it in place. The soil stabilizes, and the stream filters naturally through the new bioswales.
+Dedicating our labor to the land slows growth, but natural barriers take root. # Mother Nature # system_impact: balancing_loop_maintained # river_state: 1 # audio: soft_river_flow
+Human hands go back into the mud to hold it in place. # Mother Nature
+The soil stabilizes, and the stream filters naturally through the new bioswales. # Mother Nature
 -> end_state_check
 
 === retaining_wall ===
 ~ river_clarity -= 20
 ~ settlement_order += 10 
-// Increases human infrastructure, but permanently chokes water flow.
-# Mother Nature 
-# water_choked
-# loop_reinforcing
-
-We channel the river, bypassing the mud entirely. The concrete goes up fast, rapidly restoring order to the settlement. 
-
-But the river goes quiet where it meets the wall, permanently disconnected from its natural floodplain. Over the coming weeks, the translucent blue water turns to a dull, chemical-grey hue. The small fish that used to dart through the shallows disappear, and the crops planted nearest to the concrete banks begin to wilt.
+We channel the river in concrete, bypassing the mud entirely. # Mother Nature # system_impact: reinforcing_loop_triggered # river_state: 2 # audio: muted_dull_current # visual_fx: murky_grey_water
+The concrete goes up fast, but the river goes quiet where it meets the wall. # Mother Nature
+The translucent blue water turns to a dull, chemical-grey hue as crops begin to wilt. # Mother Nature
 -> end_state_check

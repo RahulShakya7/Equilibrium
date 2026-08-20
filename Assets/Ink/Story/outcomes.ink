@@ -38,7 +38,7 @@ The End
 
 === state_4_collapse ===
 # Mother Nature Collapse
-The valley does not recover in any season Rahul will live to see.
+The valley does not recover in any season Human will live to see.
 The scales did not tip back.
 The End
 -> END

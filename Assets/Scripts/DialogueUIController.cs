@@ -291,31 +291,65 @@ public class DialogueUIController : MonoBehaviour
     }
     private void HandleTags(List<string> tags)
     {
-        if (tags == null) return;
+        if (tags == null || tags.Count == 0)
+        {
+            Debug.Log("[DialogueUIController] HandleTags received an empty or null tag list.");
+            return;
+        }
+
+        Debug.Log($"[DialogueUIController] Processing {tags.Count} tag(s)...");
 
         foreach (string tag in tags)
         {
+            Debug.Log($"[DialogueUIController] Parsing raw tag: '{tag}'");
+
             string key = tag.Split(':')[0].Trim();
             string value = tag.Contains(":") ? tag.Split(':')[1].Trim() : "";
 
+            // --- Forest & Post-Processing State ---
             if (key == "env_state" && int.TryParse(value, out int stateIndex))
             {
+                Debug.Log($"[DialogueUIController] Parsed 'env_state' tag with index: {stateIndex}");
+
                 // 1. Update Post-Processing Lighting
                 var volumeMgr = UnityEngine.Object.FindFirstObjectByType<EnvironmentVolumeManager>();
                 if (volumeMgr != null) 
                 {
+                    Debug.Log($"[DialogueUIController] Found EnvironmentVolumeManager in scene. Executing state {stateIndex}.");
                     volumeMgr.SetEnvironmentalState(stateIndex);
+                }
+                else
+                {
+                    Debug.LogWarning("[DialogueUIController] Failed to find EnvironmentVolumeManager in scene!");
                 }
 
                 // 2. Trigger Tree Mesh Transition
                 var forestMgr = UnityEngine.Object.FindFirstObjectByType<ForestStateManager>();
                 if (forestMgr != null) 
                 {
+                    Debug.Log($"[DialogueUIController] Found ForestStateManager in scene. Executing transition to state {stateIndex}.");
                     forestMgr.TransitionToState(stateIndex);
                 }
                 else
                 {
-                    Debug.LogError("[DialogueUIController] Could not find ForestStateManager in scene!");
+                    Debug.LogError("[DialogueUIController] Failed to find ForestStateManager in scene! Ensure script is attached to an active GameObject.");
+                }
+            }
+
+            // --- River Mesh & Material State ---
+            if (key == "river_state" && int.TryParse(value, out int riverIndex))
+            {
+                Debug.Log($"[DialogueUIController] Parsed 'river_state' tag with index: {riverIndex}");
+
+                var riverMgr = UnityEngine.Object.FindFirstObjectByType<RiverStateManager>();
+                if (riverMgr != null)
+                {
+                    Debug.Log($"[DialogueUIController] Found RiverStateManager in scene. Executing transition to state {riverIndex}.");
+                    riverMgr.TransitionToRiverState(riverIndex);
+                }
+                else
+                {
+                    Debug.LogError("[DialogueUIController] Failed to find RiverStateManager in scene! Ensure script is attached to an active GameObject.");
                 }
             }
         }
