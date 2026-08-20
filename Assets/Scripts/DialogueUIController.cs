@@ -75,10 +75,10 @@ public class DialogueUIController : MonoBehaviour
     void HandleLine(string line, List<string> tags)
     {
         string tagDebug = (tags != null && tags.Count > 0) ? string.Join(", ", tags) : "NONE";
-    Debug.Log($"[DialogueUI] Line: '{line}' | Tags Found ({tags?.Count ?? 0}): [{tagDebug}]");
+        Debug.Log($"[DialogueUI] Line: '{line}' | Tags Found ({tags?.Count ?? 0}): [{tagDebug}]");
 
-    HandleTags(tags);
-    currentFullLine = line;
+        HandleTags(tags);
+        currentFullLine = line;
 
         lineHistory.Add(line);
         historyIndex = lineHistory.Count - 1;
@@ -289,35 +289,34 @@ public class DialogueUIController : MonoBehaviour
         StopActiveCoroutines();
         dialogueRunner.ContinueStory();
     }
-
-    void HandleTags(List<string> tags)
-    {   
+    private void HandleTags(List<string> tags)
+    {
         if (tags == null) return;
 
         foreach (string tag in tags)
         {
-            if (tag.StartsWith("speaker "))
-            {
-                string speaker = tag.Substring(8).Trim();
-                if (speakerNameText != null)
-                    speakerNameText.text = speaker;
-            }
+            string key = tag.Split(':')[0].Trim();
+            string value = tag.Contains(":") ? tag.Split(':')[1].Trim() : "";
 
-            if (tag.StartsWith("env_state:"))
+            if (key == "env_state" && int.TryParse(value, out int stateIndex))
             {
-                if (int.TryParse(tag.Substring(10).Trim(), out int stateIndex))
+                // 1. Update Post-Processing Lighting
+                var volumeMgr = UnityEngine.Object.FindFirstObjectByType<EnvironmentVolumeManager>();
+                if (volumeMgr != null) 
                 {
-                    if (volumeManager == null)
-                        volumeManager = UnityEngine.Object.FindFirstObjectByType<EnvironmentVolumeManager>();
-
-                    if (volumeManager != null)
-                        volumeManager.SetEnvironmentalState(stateIndex);
+                    volumeMgr.SetEnvironmentalState(stateIndex);
                 }
-            }
 
-            if (EnvironmentManager.Instance != null)
-            {
-                EnvironmentManager.Instance.HandleTag(tag);
+                // 2. Trigger Tree Mesh Transition
+                var forestMgr = UnityEngine.Object.FindFirstObjectByType<ForestStateManager>();
+                if (forestMgr != null) 
+                {
+                    forestMgr.TransitionToState(stateIndex);
+                }
+                else
+                {
+                    Debug.LogError("[DialogueUIController] Could not find ForestStateManager in scene!");
+                }
             }
         }
     }
