@@ -1,5 +1,4 @@
 using UnityEngine;
-using System.Collections.Generic;
 
 public class EnvironmentManager : MonoBehaviour
 {
@@ -42,13 +41,11 @@ public class EnvironmentManager : MonoBehaviour
 
     void Start()
     {
-        // Initial world state: healthy forest, clear river, no final state
         SetForestState(true);
         SetRiverState(true);
         SetFinalState("none");
 
-        // Subscribe to variable changes
-        dialogueRunner = FindFirstObjectByType<InkDialogueRunner>();
+        dialogueRunner = UnityEngine.Object.FindFirstObjectByType<InkDialogueRunner>();
         if (dialogueRunner != null)
             dialogueRunner.OnVariableChanged += HandleVariableChange;
     }
@@ -59,10 +56,16 @@ public class EnvironmentManager : MonoBehaviour
             dialogueRunner.OnVariableChanged -= HandleVariableChange;
     }
 
-    // Called by DialogueUIController when a tag is parsed
     public void HandleTag(string tag)
     {
-        if (tag.StartsWith("environment "))
+        if (tag.StartsWith("env_state:"))
+        {
+            if (int.TryParse(tag.Substring(10).Trim(), out int stateIndex))
+            {
+                ApplyEnvironmentState(stateIndex);
+            }
+        }
+        else if (tag.StartsWith("environment "))
         {
             string action = tag.Substring(12).Trim();
             ProcessEnvironmentTag(action);
@@ -72,31 +75,35 @@ public class EnvironmentManager : MonoBehaviour
             string outcome = tag.Substring(8).Trim();
             SetFinalState(outcome);
         }
-        // Speaker tags can be used for audio or ambience
-        else if (tag.StartsWith("speaker "))
+    }
+
+    private void ApplyEnvironmentState(int stateIndex)
+    {
+        bool isHealthy = (stateIndex <= 1);
+
+        SetForestState(isHealthy);
+        PlaySound(isHealthy ? birdsong : chainsaw);
+
+        var volumeMgr = UnityEngine.Object.FindFirstObjectByType<EnvironmentVolumeManager>();
+        if (volumeMgr != null)
         {
-            // Optional: switch ambient sound or portraits
+            volumeMgr.SetEnvironmentalState(stateIndex);
         }
     }
 
-    // Called when an Ink variable changes
     private void HandleVariableChange(string varName, object value)
     {
-        int intValue = (int)value;
-
-        switch (varName)
+        if (value is int intValue)
         {
-            case "forest_stock":
-                // If forest drops below 50, show cleared forest
-                SetForestState(intValue >= 50);
-                break;
-            case "river_clarity":
-                // If river clarity drops below 80, show choked river
-                SetRiverState(intValue >= 80);
-                break;
-            case "soil_fertility":
-                // Could trigger soil degradation visuals
-                break;
+            switch (varName)
+            {
+                case "forest_stock":
+                    SetForestState(intValue >= 50);
+                    break;
+                case "river_clarity":
+                    SetRiverState(intValue >= 80);
+                    break;
+            }
         }
     }
 
@@ -105,12 +112,10 @@ public class EnvironmentManager : MonoBehaviour
         switch (action)
         {
             case "silviculture":
-                SetForestState(true);
-                PlaySound(birdsong);
+                ApplyEnvironmentState(1);
                 break;
             case "clearcut":
-                SetForestState(false);
-                PlaySound(chainsaw);
+                ApplyEnvironmentState(2);
                 break;
             case "water_recovering":
                 SetRiverState(true);
@@ -120,13 +125,9 @@ public class EnvironmentManager : MonoBehaviour
                 SetRiverState(false);
                 PlaySound(concretePound);
                 break;
-            default:
-                Debug.LogWarning("Unknown environment tag: " + action);
-                break;
         }
     }
 
-    // forestHealthy = true shows healthy forest, false shows cleared
     public void SetForestState(bool forestHealthy)
     {
         SetActiveAll(healthyForestObjects, forestHealthy);
@@ -134,7 +135,6 @@ public class EnvironmentManager : MonoBehaviour
         SetActiveAll(stumps, !forestHealthy);
     }
 
-    // riverClear = true shows clear river, false shows choked/walled
     public void SetRiverState(bool riverClear)
     {
         SetActiveAll(clearRiverObjects, riverClear);
@@ -144,7 +144,6 @@ public class EnvironmentManager : MonoBehaviour
 
     public void SetFinalState(string outcome)
     {
-        // Disable all ending visuals first
         SetActiveAll(balanceState, false);
         SetActiveAll(vulnerableState, false);
         SetActiveAll(partialState, false);

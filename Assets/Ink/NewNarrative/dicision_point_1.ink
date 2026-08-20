@@ -10,14 +10,16 @@ How do we take from the forest?
 
 === silviculture ===
 ~ forest_stock -= 10
-Axes ring only at the tree line. The work is agonizingly slow, and our builders complain, but the canopy holds. # Mother Nature # system_impact: balancing_loop_maintained
+Axes ring only at the tree line. # Mother Nature # system_impact: balancing_loop_maintained # env_state: 1
+The work is agonizingly slow, and our builders complain, but the canopy holds. # Mother Nature
 The forest's regeneration easily keeps pace with our axes. We have less, but we have enough. # Mother Nature
 -> seasonal_rains
 
 === clearcut ===
 ~ forest_stock -= 60
 ~ soil_fertility -= 30
-The saws do not stop at the tree line. We prioritize our immediate survival. # Mother Nature # system_impact: reinforcing_loop_triggered # bg: barren_stumps # audio: low_hollow_drone # visual_fx: pale_grass_patches
+The saws do not stop at the tree line. # Mother Nature # system_impact: reinforcing_loop_triggered # env_state: 2 # bg: barren_stumps # audio: low_hollow_drone # visual_fx: pale_grass_patches
+We prioritize our immediate survival. # Mother Nature
 By dusk, our wood stores are overflowing. The settlement feels secure, warm, and fast-growing. # Mother Nature
 But behind the houses, the vibrant green canopy is gone. Just barren, muddy stumps remain. Without the shade, the soil bakes. # Mother Nature
 The light acoustic wind fades from the valley, replaced by a low, hollow drone. # Mother Nature

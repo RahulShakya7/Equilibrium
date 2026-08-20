@@ -14,12 +14,15 @@ public class DialogueUIController : MonoBehaviour
     [Header("Dependencies")]
     [SerializeField] private InkDialogueRunner dialogueRunner;
     [SerializeField] private TMP_Text lineText;
-    [SerializeField] private Transform choiceContainer;     // Assign ChoiceObject
-    [SerializeField] private GameObject choiceButtonPrefab; // Assign ChoiceButton prefab
+    [SerializeField] private Transform choiceContainer;     
+    [SerializeField] private GameObject choiceButtonPrefab; 
 
     [Header("Speaker UI (Optional)")]
     [SerializeField] private TMP_Text speakerNameText;
     [SerializeField] private Image speakerPortrait;
+
+    [Header("Environment Reference")]
+    [SerializeField] private EnvironmentVolumeManager volumeManager;
 
     [Header("Typewriter Settings")]
     [SerializeField] private float charactersPerSecond = 30f;
@@ -71,8 +74,11 @@ public class DialogueUIController : MonoBehaviour
 
     void HandleLine(string line, List<string> tags)
     {
-        HandleTags(tags);
-        currentFullLine = line;
+        string tagDebug = (tags != null && tags.Count > 0) ? string.Join(", ", tags) : "NONE";
+    Debug.Log($"[DialogueUI] Line: '{line}' | Tags Found ({tags?.Count ?? 0}): [{tagDebug}]");
+
+    HandleTags(tags);
+    currentFullLine = line;
 
         lineHistory.Add(line);
         historyIndex = lineHistory.Count - 1;
@@ -98,7 +104,6 @@ public class DialogueUIController : MonoBehaviour
     {
         if (isShowingChoices) return;
 
-        // If choices are waiting and player is in trigger zone, show buttons
         if (pendingChoices != null)
         {
             if (continueIndicator != null)
@@ -195,14 +200,11 @@ public class DialogueUIController : MonoBehaviour
     {
         pendingChoices = choices;
 
-        // If the typewriter is currently typing out a line, do NOT interrupt it.
-        // Let it finish. OnTypewriterComplete() will automatically show these choices when done.
         if (typewriterCoroutine != null) 
         {
             return;
         }
 
-        // Only stop coroutines and show choices instantly if no line is currently being typed
         StopActiveCoroutines();
 
         if (isPlayerInDecisionZone)
@@ -220,7 +222,6 @@ public class DialogueUIController : MonoBehaviour
 
         StopActiveCoroutines();
 
-        // If knot name passed (e.g. "decision_point_1"), start that knot now!
         if (!string.IsNullOrEmpty(optionalKnotName) && dialogueRunner != null)
         {
             Debug.Log("Starting Knot via Trigger: " + optionalKnotName);
@@ -249,15 +250,12 @@ public class DialogueUIController : MonoBehaviour
             return;
         }
 
-        // Clear previous buttons
         foreach (Transform child in choiceContainer)
             Destroy(child.gameObject);
 
-        // Instantiate new buttons
         for (int i = 0; i < choices.Count; i++)
         {
             Choice choice = choices[i];
-            Debug.Log("Spawning Button for Choice: " + choice.text);
 
             GameObject buttonObj = Instantiate(choiceButtonPrefab, choiceContainer);
 
@@ -294,6 +292,8 @@ public class DialogueUIController : MonoBehaviour
 
     void HandleTags(List<string> tags)
     {   
+        if (tags == null) return;
+
         foreach (string tag in tags)
         {
             if (tag.StartsWith("speaker "))
@@ -301,6 +301,18 @@ public class DialogueUIController : MonoBehaviour
                 string speaker = tag.Substring(8).Trim();
                 if (speakerNameText != null)
                     speakerNameText.text = speaker;
+            }
+
+            if (tag.StartsWith("env_state:"))
+            {
+                if (int.TryParse(tag.Substring(10).Trim(), out int stateIndex))
+                {
+                    if (volumeManager == null)
+                        volumeManager = UnityEngine.Object.FindFirstObjectByType<EnvironmentVolumeManager>();
+
+                    if (volumeManager != null)
+                        volumeManager.SetEnvironmentalState(stateIndex);
+                }
             }
 
             if (EnvironmentManager.Instance != null)
