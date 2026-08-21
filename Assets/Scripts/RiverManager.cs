@@ -52,23 +52,25 @@ public class RiverStateManager : MonoBehaviour
         StartCoroutine(CrossFadeRiverRoutine(currentState, targetState));
     }
 
-    private void SetInitialState(GameObject activeState)
-    {
-        currentState = activeState;
-        if (healthyRiver) healthyRiver.SetActive(healthyRiver == activeState);
-        if (restoredRiver) restoredRiver.SetActive(restoredRiver == activeState);
-        if (chokedRiver) chokedRiver.SetActive(chokedRiver == activeState);
+private void SetInitialState(GameObject activeState)
+{
+    currentState = activeState;
+    if (healthyRiver) healthyRiver.SetActive(healthyRiver == activeState);
+    if (restoredRiver) restoredRiver.SetActive(restoredRiver == activeState);
+    if (chokedRiver) chokedRiver.SetActive(chokedRiver == activeState);
 
-        if (healthyRiver) healthyRiver.transform.localScale = Vector3.one;
-        if (restoredRiver) restoredRiver.transform.localScale = Vector3.one;
-        if (chokedRiver) chokedRiver.transform.localScale = Vector3.one;
-
-        Debug.Log($"[RiverStateManager] Initial river state active object: {(activeState != null ? activeState.name : "None")}");
-    }
+    // if (healthyRiver) healthyRiver.transform.localScale = Vector3.one;
+    // if (restoredRiver) restoredRiver.transform.localScale = Vector3.one;
+    // if (chokedRiver) chokedRiver.transform.localScale = Vector3.one;
+    
+    // The local scale is now left exactly as you set it in the Inspector!
+    Debug.Log($"[RiverStateManager] Initial river state active object: {(activeState != null ? activeState.name : "None")}");
+}
 
     private IEnumerator CrossFadeRiverRoutine(GameObject fromState, GameObject toState)
     {
-        Debug.Log($"[RiverStateManager] CrossFade River Coroutine Started: {(fromState != null ? fromState.name : "None")} -> {toState.name}");
+        // Save the correct scale of the target river
+        Vector3 targetScale = toState.transform.localScale;
 
         toState.SetActive(true);
         toState.transform.localScale = Vector3.zero;
@@ -80,8 +82,8 @@ public class RiverStateManager : MonoBehaviour
             elapsed += Time.deltaTime;
             float t = Mathf.SmoothStep(0f, 1f, elapsed / transitionDuration);
 
-            if (fromState != null) fromState.transform.localScale = Vector3.Lerp(Vector3.one, Vector3.zero, t);
-            toState.transform.localScale = Vector3.Lerp(Vector3.zero, Vector3.one, t);
+            if (fromState != null) fromState.transform.localScale = Vector3.Lerp(targetScale, Vector3.zero, t);
+            toState.transform.localScale = Vector3.Lerp(Vector3.zero, targetScale, t);
 
             yield return null;
         }
@@ -89,10 +91,10 @@ public class RiverStateManager : MonoBehaviour
         if (fromState != null)
         {
             fromState.SetActive(false);
-            fromState.transform.localScale = Vector3.one;
+            fromState.transform.localScale = targetScale; // Reset to correct scale
         }
 
-        toState.transform.localScale = Vector3.one;
+        toState.transform.localScale = targetScale; // Reset to correct scale
         currentState = toState;
 
         Debug.Log($"[RiverStateManager] CrossFade River Completed! Current active river object: {currentState.name}");
