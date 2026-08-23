@@ -5,11 +5,11 @@
 
 === end_state_check ===
 {
-    - forest_stock >= 80 && river_clarity >= 90:
+    - forest_stock >= 70 && river_clarity >= 85:
         -> state_1_balance
-    - forest_stock >= 80 && river_clarity < 90:
+    - forest_stock >= 70 && river_clarity < 85:
         -> state_2_vulnerable
-    - forest_stock < 80 && river_clarity >= 90:
+    - forest_stock < 70 && river_clarity >= 85:
         -> state_3_partial
     - else:
         -> state_4_collapse

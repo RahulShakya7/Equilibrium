@@ -59,14 +59,13 @@ public class EnvironmentVolumeManager : MonoBehaviour
                 break;
 
             case 1: // Moderate Harvest
-                colorAdjustments.colorFilter.value = new Color(0.98f, 0.88f, 0.55f); // Distinct Warm Yellow
+                colorAdjustments.colorFilter.value = new Color(0.48f, 0.56f, 0.66f); // Soft Slate Blue
                 if (whiteBalance != null) whiteBalance.temperature.value = 30f;
                 Debug.Log("[VolumeManager] Global Volume set to MODERATE (Warm Amber Tint)");
                 break;
 
             case 2: // Severe Clearcut
-                colorAdjustments.colorFilter.value = new Color(0.85f, 0.55f, 0.25f); // Strong Dry Orange/Brown
-                if (whiteBalance != null) whiteBalance.temperature.value = 75f;
+                colorAdjustments.colorFilter.value = new Color(0.78f, 0.70f, 0.44f); // Muted Warm Yellow
                 Debug.Log("[VolumeManager] Global Volume set to SEVERE (Dry Desert Tint)");
                 break;
 

@@ -35,9 +35,10 @@ public class DialogueUIController : MonoBehaviour
 
     private List<string> lineHistory = new List<string>();
     private int historyIndex = -1;
-
+  
     private bool isPlayerInDecisionZone = false;
     private bool isShowingChoices = false; 
+    public RainManager rainManager;
 
     private void OnEnable()
     {
@@ -305,6 +306,29 @@ public class DialogueUIController : MonoBehaviour
 
             string key = tag.Split(':')[0].Trim();
             string value = tag.Contains(":") ? tag.Split(':')[1].Trim() : "";
+
+            // --- Rain State (Moved INSIDE the loop) ---
+            if (key == "rain")
+            {
+                Debug.Log($"[DialogueUIController] Parsing 'rain' tag with value: {value}");
+
+                if (rainManager == null)
+                {
+                    Debug.LogError("[DialogueUIController] Rain Manager is NULL! Please assign it in the Inspector!");
+                }
+                else if (value == "heavy")
+                {
+                    rainManager.SetSeasonalRain(1.0f);
+                }
+                else if (value == "light")
+                {
+                    rainManager.SetSeasonalRain(0.4f);
+                }
+                else if (value == "none")
+                {
+                    rainManager.SetSeasonalRain(0.0f);
+                }
+            }
 
             // --- Forest & Post-Processing State ---
             if (key == "env_state" && int.TryParse(value, out int stateIndex))

@@ -15,13 +15,19 @@ public class RiverStateManager : MonoBehaviour
 
     private void Start()
     {
-        // Reference Validation
+        Debug.Log("[RiverStateManager] Initializing...");
+
         if (healthyRiver == null) Debug.LogError("[RiverStateManager] Healthy River reference is missing in the Inspector!");
         if (restoredRiver == null) Debug.LogError("[RiverStateManager] Restored River reference is missing in the Inspector!");
         if (chokedRiver == null) Debug.LogError("[RiverStateManager] Choked River reference is missing in the Inspector!");
 
-        Debug.Log("[RiverStateManager] Script initialized successfully.");
-        SetInitialState(healthyRiver);
+        // Activate only the healthy river at start
+        if (healthyRiver) healthyRiver.SetActive(true);
+        if (restoredRiver) restoredRiver.SetActive(false);
+        if (chokedRiver) chokedRiver.SetActive(false);
+        currentState = healthyRiver;
+
+        Debug.Log($"[RiverStateManager] Initialized. Active river state: {(currentState != null ? currentState.name : "None")}");
     }
 
     public void TransitionToRiverState(int stateIndex)
@@ -37,7 +43,7 @@ public class RiverStateManager : MonoBehaviour
 
         if (targetState == null)
         {
-            Debug.LogError($"[RiverStateManager] Target GameObject for river state index {stateIndex} is NULL! Ensure slots are assigned in the Inspector.");
+            Debug.LogError($"[RiverStateManager] Target GameObject for river state index {stateIndex} is NULL!");
             return;
         }
 
@@ -52,28 +58,14 @@ public class RiverStateManager : MonoBehaviour
         StartCoroutine(CrossFadeRiverRoutine(currentState, targetState));
     }
 
-private void SetInitialState(GameObject activeState)
-{
-    currentState = activeState;
-    if (healthyRiver) healthyRiver.SetActive(healthyRiver == activeState);
-    if (restoredRiver) restoredRiver.SetActive(restoredRiver == activeState);
-    if (chokedRiver) chokedRiver.SetActive(chokedRiver == activeState);
-
-    // if (healthyRiver) healthyRiver.transform.localScale = Vector3.one;
-    // if (restoredRiver) restoredRiver.transform.localScale = Vector3.one;
-    // if (chokedRiver) chokedRiver.transform.localScale = Vector3.one;
-    
-    // The local scale is now left exactly as you set it in the Inspector!
-    Debug.Log($"[RiverStateManager] Initial river state active object: {(activeState != null ? activeState.name : "None")}");
-}
-
     private IEnumerator CrossFadeRiverRoutine(GameObject fromState, GameObject toState)
     {
-        // Save the correct scale of the target river
+        // Save the correct scale of the target river (prevents the giant block bug)
         Vector3 targetScale = toState.transform.localScale;
 
         toState.SetActive(true);
         toState.transform.localScale = Vector3.zero;
+        Debug.Log($"[RiverStateManager] CrossFade Started. {toState.name} scaled to 0. Target scale is {targetScale}.");
 
         float elapsed = 0f;
 
@@ -88,15 +80,15 @@ private void SetInitialState(GameObject activeState)
             yield return null;
         }
 
+        // Final cleanup
         if (fromState != null)
         {
             fromState.SetActive(false);
-            fromState.transform.localScale = targetScale; // Reset to correct scale
+            fromState.transform.localScale = targetScale; 
         }
-
-        toState.transform.localScale = targetScale; // Reset to correct scale
+        toState.transform.localScale = targetScale;
         currentState = toState;
 
-        Debug.Log($"[RiverStateManager] CrossFade River Completed! Current active river object: {currentState.name}");
+        Debug.Log($"[RiverStateManager] CrossFade Completed! Current active river object: {currentState.name}");
     }
 }

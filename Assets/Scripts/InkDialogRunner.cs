@@ -15,7 +15,7 @@ public class InkDialogueRunner : MonoBehaviour
 
     private Story story;
     private bool storyEnded = false;
-
+    public RainManager rainManager;
     void Start()
     {
         if (inkJSON == null)
@@ -36,7 +36,20 @@ public class InkDialogueRunner : MonoBehaviour
         story.ObserveVariable("soil_fertility", (varName, newValue) => {
             OnVariableChanged?.Invoke(varName, newValue);
         });
-
+        story.BindExternalFunction("setRain", (float intensity) => {
+                Debug.Log($"[DialogueController] Ink called setRain with intensity: {intensity}");
+                
+                if (rainManager != null)
+                {
+                    rainManager.SetSeasonalRain(intensity);
+                }
+                else
+                {
+                    Debug.LogError("[DialogueController] Rain Manager is NOT assigned in the Inspector! Please drag the RainSystem GameObject into the 'Rain Manager' slot.");
+                }
+            }
+        );
+    
         TryAdvance();
     }
 
