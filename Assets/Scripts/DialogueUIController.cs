@@ -39,6 +39,10 @@ public class DialogueUIController : MonoBehaviour
     private bool isPlayerInDecisionZone = false;
     private bool isShowingChoices = false; 
     public RainManager rainManager;
+    
+    // ** NEW PENDING DECISION LOGIC **
+    private bool pendingDecision = false;
+    private string pendingKnot = "";
 
     private void OnEnable()
     {
@@ -105,6 +109,14 @@ public class DialogueUIController : MonoBehaviour
     {
         if (isShowingChoices) return;
 
+        // ** PENDING DECISION LOGIC **
+        // If we are waiting for a decision (from trigger zone) and the story is now completely done...
+        if (pendingDecision && dialogueRunner.IsStoryComplete)
+        {
+            TriggerPendingKnot();
+            return;
+        }
+
         if (pendingChoices != null)
         {
             if (continueIndicator != null)
@@ -118,17 +130,39 @@ public class DialogueUIController : MonoBehaviour
             return;
         }
 
-        if (historyIndex < lineHistory.Count - 1)
-        {
-            if (continueIndicator != null)
-                continueIndicator.SetActive(true);
-            return;
-        }
-
+        // Standard Auto-advance logic (so prologue/rains keep playing!)
         if (continueIndicator != null)
             continueIndicator.SetActive(true);
 
         autoAdvanceCoroutine = StartCoroutine(AutoAdvance());
+    }
+
+    // ** CALLED BY THE TRIGGER ZONES **
+    public void SetPlayerInDecisionZone(bool inZone, string optionalKnotName = "")
+    {
+        isPlayerInDecisionZone = inZone;
+
+        if (!string.IsNullOrEmpty(optionalKnotName))
+        {
+            pendingKnot = optionalKnotName;
+            pendingDecision = true;
+        }
+
+        // Trigger immediately if the story is already 100% finished (e.g., player walks in at the end)
+        if (inZone && pendingDecision && typewriterCoroutine == null && dialogueRunner.IsStoryComplete)
+        {
+            TriggerPendingKnot();
+        }
+    }
+
+    // ** ACTUALLY JUMPS TO THE KNOT **
+    private void TriggerPendingKnot()
+    {
+        string knotToGoTo = pendingKnot;
+        pendingKnot = "";
+        pendingDecision = false;
+        Debug.Log("Story complete. Triggering Knot: " + knotToGoTo);
+        dialogueRunner.GoToKnot(knotToGoTo);
     }
 
     IEnumerator AutoAdvance()
@@ -215,28 +249,6 @@ public class DialogueUIController : MonoBehaviour
         }
     }
 
-    public void SetPlayerInDecisionZone(bool inZone, string optionalKnotName = "")
-    {
-        isPlayerInDecisionZone = inZone;
-
-        if (!inZone) return;
-
-        StopActiveCoroutines();
-
-        if (!string.IsNullOrEmpty(optionalKnotName) && dialogueRunner != null)
-        {
-            Debug.Log("Starting Knot via Trigger: " + optionalKnotName);
-            dialogueRunner.GoToKnot(optionalKnotName);
-            return;
-        }
-
-        if (pendingChoices != null)
-        {
-            ShowChoicesNow(pendingChoices);
-            pendingChoices = null;
-        }
-    }
-
     void ShowChoicesNow(List<Choice> choices)
     {
         StopActiveCoroutines();
@@ -290,6 +302,7 @@ public class DialogueUIController : MonoBehaviour
         StopActiveCoroutines();
         dialogueRunner.ContinueStory();
     }
+
     private void HandleTags(List<string> tags)
     {
         if (tags == null || tags.Count == 0)
@@ -307,14 +320,19 @@ public class DialogueUIController : MonoBehaviour
             string key = tag.Split(':')[0].Trim();
             string value = tag.Contains(":") ? tag.Split(':')[1].Trim() : "";
 
-            // --- Rain State (Moved INSIDE the loop) ---
+            // --- Rain State ---
             if (key == "rain")
             {
                 Debug.Log($"[DialogueUIController] Parsing 'rain' tag with value: {value}");
 
                 if (rainManager == null)
                 {
-                    Debug.LogError("[DialogueUIController] Rain Manager is NULL! Please assign it in the Inspector!");
+                    rainManager = FindFirstObjectByType<RainManager>();
+                }
+
+                if (rainManager == null)
+                {
+                    Debug.LogError("[DialogueUIController] Rain Manager is NULL! Make sure the RainSystem with the RainManager script is active in the scene!");
                 }
                 else if (value == "heavy")
                 {
@@ -335,11 +353,9 @@ public class DialogueUIController : MonoBehaviour
             {
                 Debug.Log($"[DialogueUIController] Parsed 'env_state' tag with index: {stateIndex}");
 
-                // 1. Update Post-Processing Lighting
                 var volumeMgr = UnityEngine.Object.FindFirstObjectByType<EnvironmentVolumeManager>();
                 if (volumeMgr != null) 
                 {
-                    Debug.Log($"[DialogueUIController] Found EnvironmentVolumeManager in scene. Executing state {stateIndex}.");
                     volumeMgr.SetEnvironmentalState(stateIndex);
                 }
                 else
@@ -347,16 +363,14 @@ public class DialogueUIController : MonoBehaviour
                     Debug.LogWarning("[DialogueUIController] Failed to find EnvironmentVolumeManager in scene!");
                 }
 
-                // 2. Trigger Tree Mesh Transition
                 var forestMgr = UnityEngine.Object.FindFirstObjectByType<ForestStateManager>();
                 if (forestMgr != null) 
                 {
-                    Debug.Log($"[DialogueUIController] Found ForestStateManager in scene. Executing transition to state {stateIndex}.");
                     forestMgr.TransitionToState(stateIndex);
                 }
                 else
                 {
-                    Debug.LogError("[DialogueUIController] Failed to find ForestStateManager in scene! Ensure script is attached to an active GameObject.");
+                    Debug.LogError("[DialogueUIController] Failed to find ForestStateManager in scene!");
                 }
             }
 
@@ -368,12 +382,11 @@ public class DialogueUIController : MonoBehaviour
                 var riverMgr = UnityEngine.Object.FindFirstObjectByType<RiverStateManager>();
                 if (riverMgr != null)
                 {
-                    Debug.Log($"[DialogueUIController] Found RiverStateManager in scene. Executing transition to state {riverIndex}.");
                     riverMgr.TransitionToRiverState(riverIndex);
                 }
                 else
                 {
-                    Debug.LogError("[DialogueUIController] Failed to find RiverStateManager in scene! Ensure script is attached to an active GameObject.");
+                    Debug.LogError("[DialogueUIController] Failed to find RiverStateManager in scene!");
                 }
             }
         }

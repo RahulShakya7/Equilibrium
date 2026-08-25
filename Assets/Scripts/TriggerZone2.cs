@@ -5,18 +5,18 @@ public class DecisionZoneTrigger2 : MonoBehaviour
     [Header("Settings")]
     [SerializeField] private string targetKnotName = "decision_point_2"; 
     
-    private bool hasTriggered = false; // Prevents repeating calls
+    private bool hasTriggered = false; 
 
     private void OnTriggerEnter(Collider other)
     {
-        if (hasTriggered) return; // Ignore if already activated
+        if (hasTriggered) return; 
 
         if (other.CompareTag("Player"))
         {
             hasTriggered = true;
             Debug.Log("Player entered decision trigger zone 2!");
 
-            DialogueUIController uiController = Object.FindFirstObjectByType<DialogueUIController>();
+            DialogueUIController uiController = FindFirstObjectByType<DialogueUIController>();
             if (uiController != null)
             {
                 uiController.SetPlayerInDecisionZone(true, targetKnotName);
@@ -24,7 +24,6 @@ public class DecisionZoneTrigger2 : MonoBehaviour
         }
     }
 
-    // Reset if you ever need to re-use this trigger zone
     public void ResetTrigger()
     {
         hasTriggered = false;

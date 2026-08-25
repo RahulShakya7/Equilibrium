@@ -13,9 +13,14 @@ public class InkDialogueRunner : MonoBehaviour
     public event Action<List<Choice>> OnChoicesReady;
     public event Action<string, object> OnVariableChanged;
 
-    private Story story;
+    public Story story;
     private bool storyEnded = false;
     public RainManager rainManager;
+
+    public bool IsStoryComplete
+    {
+        get { return !story.canContinue; }
+    }
     void Start()
     {
         if (inkJSON == null)
