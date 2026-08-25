@@ -23,7 +23,17 @@ public class InkDialogueRunner : MonoBehaviour
             Debug.LogError("InkDialogueRunner: Ink JSON is not assigned.");
             return;
         }
-
+        // Check what mode the player chose in the main menu
+        if (GameModeManager.CurrentMode == "Simulation")
+        {
+            // Do simulation-specific things (e.g., Free roam, no story dialogue, infinite resources)
+            Debug.Log("Simulation Mode is running!");
+        }
+        else
+        {
+            // Do story-specific things (e.g., Show story dialogue, limit resources)
+            Debug.Log("Story Mode is running!");
+        }
         story = new Story(inkJSON.text);
 
         // Register observers for the resource variables
