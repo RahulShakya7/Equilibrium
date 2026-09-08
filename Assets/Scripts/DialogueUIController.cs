@@ -305,6 +305,7 @@ public class DialogueUIController : MonoBehaviour
 
     private void HandleTags(List<string> tags)
     {
+        
         if (tags == null || tags.Count == 0)
         {
             Debug.Log("[DialogueUIController] HandleTags received an empty or null tag list.");
@@ -319,6 +320,23 @@ public class DialogueUIController : MonoBehaviour
 
             string key = tag.Split(':')[0].Trim();
             string value = tag.Contains(":") ? tag.Split(':')[1].Trim() : "";
+
+            // --- Audio / Sound Effects State ---
+            if (key == "audio")
+            {
+                Debug.Log($"[DialogueUIController] Requesting audio: {value}");
+                
+                // Find the AudioManager and play the sound
+                var audioMgr = UnityEngine.Object.FindFirstObjectByType<AudioManager>();
+                if (audioMgr != null)
+                {
+                    audioMgr.PlaySound(value);
+                }
+                else
+                {
+                    Debug.LogWarning("[DialogueUIController] Could not find AudioManager in scene!");
+                }
+            }
 
             // --- Rain State ---
             if (key == "rain")
@@ -390,5 +408,6 @@ public class DialogueUIController : MonoBehaviour
                 }
             }
         }
+        
     }
 }

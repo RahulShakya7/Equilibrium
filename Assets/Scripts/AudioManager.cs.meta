@@ -1,0 +1,19 @@
+fileFormatVersion: 2
+guid: bcd4e6098770c4562857668362967e78
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - sfxSource: {instanceID: 0}
+  - heavyRainSound: {fileID: 8300000, guid: ec568d85fea054ce88232b56337e1aad, type: 3}
+  - lightWindSound: {instanceID: 0}
+  - riverSound: {fileID: 8300000, guid: 54ec985014ebf416b98c59bf3894554a, type: 3}
+  - birdsongSound: {instanceID: 0}
+  - chopwoodSound: {fileID: 8300000, guid: 9019d54213ee241d48b30bb3d7e40da2, type: 3}
+  - initialbackgroundSound: {fileID: 8300000, guid: ba6338f1bfca048f481154a3ddb5f9c9, type: 3}
+  - degradedForestSound: {fileID: 8300000, guid: c3a848f2223f642f8a6d383fe9c04024, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

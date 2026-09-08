@@ -1,5 +1,7 @@
 === prologue ===
 # Mother Nature
+# audio: initial_background
+# audio: forest_sound
     # auto
     We carved our homes where the river bends.
     # auto
